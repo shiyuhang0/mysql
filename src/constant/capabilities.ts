@@ -15,6 +15,7 @@ enum ServerCapabilities {
   CLIENT_IGNORE_SIGPIPE = 0x00001000,
   CLIENT_RESERVED = 0x00004000,
   CLIENT_PS_MULTI_RESULTS = 0x00040000,
+  CLIENT_SSL = 0x800,
 }
 
 export default ServerCapabilities;

@@ -7,6 +7,7 @@ import {
 } from "./constant/errors.ts";
 import { log } from "./logger.ts";
 import { buildAuth } from "./packets/builders/auth.ts";
+import { buildTls } from "./packets/builders/tls.ts";
 import { buildQuery } from "./packets/builders/query.ts";
 import { ReceivePacket, SendPacket } from "./packets/packet.ts";
 import { parseError } from "./packets/parsers/err.ts";
@@ -18,6 +19,7 @@ import {
 import { FieldInfo, parseField, parseRow } from "./packets/parsers/result.ts";
 import { PacketType } from "./constant/packet.ts";
 import authPlugin from "./auth_plugin/index.ts";
+import ServerCapabilities from "./constant/capabilities.ts";
 
 /**
  * Connection state
@@ -76,13 +78,27 @@ export class Connection {
     try {
       let receive = await this.nextPacket();
       const handshakePacket = parseHandshake(receive.body);
+
+      let handshakeSequenceNumber = 1
+
+      if (this.config.tls?.enabled) {
+        if ((handshakePacket.serverCapabilities & ServerCapabilities.CLIENT_SSL) === 0) {
+          throw new Error('Server does not support TLS')
+        }
+        const tlsData = buildTls(handshakePacket, { db: this.config.db });
+        await new SendPacket(tlsData, handshakeSequenceNumber++).send(this.conn);
+        this.conn = await Deno.startTls(this.conn, {
+          hostname,
+        });
+      }
+
       const data = buildAuth(handshakePacket, {
         username,
         password,
         db: this.config.db,
       });
 
-      await new SendPacket(data, 0x1).send(this.conn);
+      await new SendPacket(data, handshakeSequenceNumber++).send(this.conn);
 
       this.state = ConnectionState.CONNECTING;
       this.serverVersion = handshakePacket.serverVersion;

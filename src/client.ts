@@ -28,6 +28,16 @@ export interface ClientConfig {
   idleTimeout?: number;
   /** charset */
   charset?: string;
+  /** TLS configuration */
+  tls?: TLSConfig;
+}
+
+/**
+ * TLS Config
+ */
+export interface TLSConfig {
+  /** Whether to enable TLS */
+  enabled: boolean
 }
 
 /** Transaction processor */
