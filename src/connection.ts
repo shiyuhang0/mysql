@@ -89,6 +89,7 @@ export class Connection {
         await new SendPacket(tlsData, handshakeSequenceNumber++).send(this.conn);
         this.conn = await Deno.startTls(this.conn, {
           hostname,
+          caCerts: this.config.tls.caCertificates,
         });
       }
 
