@@ -238,6 +238,12 @@ export class Connection {
     return version.includes("5.5.5-10.1") || version.includes("5.5.5-10.0");
   }
 
+  private isTiDBAndLessThan6_3(): Boolean {
+    const version = this.serverVersion;
+    if (!version.includes("TiDB")) return false;
+    return version < "5.7.25-TiDB-v6.3.0";
+  }
+
   /** Close database connection */
   close(): void {
     if (this.state != ConnectionState.CLOSED) {
@@ -303,7 +309,7 @@ export class Connection {
       }
 
       const rows = [];
-      if (this.lessThan5_7() || this.isMariaDBAndVersion10_0Or10_1()) {
+      if (this.lessThan5_7() || this.isMariaDBAndVersion10_0Or10_1() || this.isTiDBAndLessThan6_3()) {
         // EOF(less than 5.7 or mariadb version is 10.0 or 10.1)
         receive = await this.nextPacket();
         if (receive.type !== PacketType.EOF_Packet) {
